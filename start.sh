@@ -5,6 +5,7 @@
 #  二进制从 GitHub Release 下载（避免 512M 内存编译 OOM / git 大文件限制）
 #  完整输出（含报错）写入 startup.log 并同时打印到控制台
 #  自动读取 Wispbyte/Pterodactyl 注入的端口变量，传给 OpenList
+#  崩溃恢复：设环境变量 WIPE_DATA=1 可清空坏数据重初始化
 # ============================================================
 
 REPO_OWNER="tianjian518"
@@ -51,6 +52,12 @@ elif [ -n "$PORT" ]; then
 else
     export OPENLIST_PORT="5244"
     echo "⚠️  未检测到外部端口变量，暂用默认 5244（若外部访问不通，请在面板设置环境变量 OPENLIST_PORT=你的端口）"
+fi
+
+# ---- 2.5 清空坏数据（崩溃恢复用，平时别开）----
+if [ "${WIPE_DATA}" = "1" ]; then
+    echo "🧹 WIPE_DATA=1：清空 ./data 后重新初始化..."
+    rm -rf ./data
 fi
 
 # ---- 3. 数据目录 ----
