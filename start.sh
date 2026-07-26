@@ -3,9 +3,8 @@
 #  OpenList-GuangYaPan 启动脚本 — 适配 Wispbyte 免费服务器
 #  用法：在面板 Startup 命令里填 bash start.sh
 #  二进制从 GitHub Release 下载（避免 512M 内存编译 OOM / git 大文件限制）
+#  完整输出（含报错）写入 startup.log 并同时打印到控制台
 # ============================================================
-
-set -e
 
 REPO_OWNER="tianjian518"
 REPO_NAME="openlist-guangyapan-wispbyte"
@@ -19,8 +18,9 @@ echo "  OpenList-GuangYaPan 启动脚本"
 echo "  ${REPO_OWNER}/${REPO_NAME} @ ${RELEASE_TAG}"
 echo "=========================================="
 
-# ---- 1. 下载预编译二进制（如果未解压）----
-if [ ! -f "${BINARY_NAME}" ]; then
+# ---- 1. 下载预编译二进制（如果未解压，或指定强制重下）----
+if [ ! -f "${BINARY_NAME}" ] || [ "${FORCE_REDOWNLOAD}" = "1" ]; then
+    if [ "${FORCE_REDOWNLOAD}" = "1" ] && [ -f "${BINARY_GZ}" ]; then rm -f "${BINARY_GZ}"; fi
     if [ ! -f "${BINARY_GZ}" ]; then
         DOWNLOAD_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${RELEASE_TAG}/${BINARY_GZ}"
         echo "⬇️  下载预编译二进制: ${DOWNLOAD_URL}"
@@ -38,22 +38,20 @@ else
     echo "✅ 二进制已存在，跳过下载"
 fi
 
-# ---- 2. 创建数据目录 ----
+# ---- 2. 数据目录 ----
 mkdir -p "${DATA_DIR}"
 
-# ---- 3. 显示版本 ----
-echo ""
-echo "=========================================="
-./${BINARY_NAME} version 2>/dev/null || true
-echo "=========================================="
-echo ""
-
-# ---- 4. 启动 ----
+# ---- 3. 启动（完整输出捕获）----
 echo "🚀 启动 OpenList-GuangYaPan ..."
-echo "    默认端口: 5244"
-echo "    首次启动会生成随机管理员密码，请查看下方日志"
-echo "    获取密码: ./${BINARY_NAME} admin"
-echo ""
+echo "    日志同时写入 startup.log"
+echo "    获取密码命令: ./${BINARY_NAME} admin"
 echo "------------------------------------------"
 
-exec ./${BINARY_NAME} server --data "${DATA_DIR}"
+./${BINARY_NAME} server --data "${DATA_DIR}" 2>&1 | tee startup.log
+EXIT_CODE=${PIPESTATUS[0]}
+echo ""
+echo "=== OpenList 已退出，退出码: ${EXIT_CODE} ==="
+if [ "${EXIT_CODE}" != "0" ]; then
+    echo "=== 最后 30 行日志（真正的报错通常在这里）==="
+    tail -n 30 startup.log
+fi
