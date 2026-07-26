@@ -4,6 +4,7 @@
 #  用法：在面板 Startup 命令里填 bash start.sh
 #  二进制从 GitHub Release 下载（避免 512M 内存编译 OOM / git 大文件限制）
 #  完整输出（含报错）写入 startup.log 并同时打印到控制台
+#  自动读取 Wispbyte/Pterodactyl 注入的端口变量，传给 OpenList
 # ============================================================
 
 REPO_OWNER="tianjian518"
@@ -38,11 +39,25 @@ else
     echo "✅ 二进制已存在，跳过下载"
 fi
 
-# ---- 2. 数据目录 ----
+# ---- 2. 端口处理：优先用 Wispbyte/Pterodactyl 注入的端口变量 ----
+if [ -n "$OPENLIST_PORT" ]; then
+    echo "🔌 使用 OPENLIST_PORT=$OPENLIST_PORT"
+elif [ -n "$SERVER_PORT" ]; then
+    export OPENLIST_PORT="$SERVER_PORT"
+    echo "🔌 使用 SERVER_PORT=$SERVER_PORT"
+elif [ -n "$PORT" ]; then
+    export OPENLIST_PORT="$PORT"
+    echo "🔌 使用 PORT=$PORT"
+else
+    export OPENLIST_PORT="5244"
+    echo "⚠️  未检测到外部端口变量，暂用默认 5244（若外部访问不通，请在面板设置环境变量 OPENLIST_PORT=你的端口）"
+fi
+
+# ---- 3. 数据目录 ----
 mkdir -p "${DATA_DIR}"
 
-# ---- 3. 启动（完整输出捕获）----
-echo "🚀 启动 OpenList-GuangYaPan ..."
+# ---- 4. 启动（完整输出捕获）----
+echo "🚀 启动 OpenList-GuangYaPan（监听端口 ${OPENLIST_PORT}）..."
 echo "    日志同时写入 startup.log"
 echo "    获取密码命令: ./${BINARY_NAME} admin"
 echo "------------------------------------------"
