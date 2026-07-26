@@ -41,18 +41,22 @@ else
 fi
 
 # ---- 2. 端口处理：优先用 Wispbyte/Pterodactyl 注入的端口变量 ----
-if [ -n "$OPENLIST_PORT" ]; then
-    echo "🔌 使用 OPENLIST_PORT=$OPENLIST_PORT"
+# 注意：OpenList 读取的是 OPENLIST_HTTP_PORT（对应 conf.Scheme.HttpPort），
+# 不是 OPENLIST_PORT。Wispbyte 注入的变量名是 SERVER_PORT。
+if [ -n "$OPENLIST_HTTP_PORT" ]; then
+    echo "🔌 使用 OPENLIST_HTTP_PORT=$OPENLIST_HTTP_PORT"
 elif [ -n "$SERVER_PORT" ]; then
-    export OPENLIST_PORT="$SERVER_PORT"
+    export OPENLIST_HTTP_PORT="$SERVER_PORT"
     echo "🔌 使用 SERVER_PORT=$SERVER_PORT"
 elif [ -n "$PORT" ]; then
-    export OPENLIST_PORT="$PORT"
+    export OPENLIST_HTTP_PORT="$PORT"
     echo "🔌 使用 PORT=$PORT"
 else
-    export OPENLIST_PORT="5244"
-    echo "⚠️  未检测到外部端口变量，暂用默认 5244（若外部访问不通，请在面板设置环境变量 OPENLIST_PORT=你的端口）"
+    export OPENLIST_HTTP_PORT="5244"
+    echo "⚠️  未检测到外部端口变量，暂用默认 5244（若外部访问不通，请在面板设置环境变量 OPENLIST_HTTP_PORT=你的端口）"
 fi
+# 关闭 HTTPS（Wispbyte 免费层只给一个 HTTP 端口），避免无效监听
+export OPENLIST_HTTPS_PORT="-1"
 
 # ---- 2.5 清空坏数据（崩溃恢复用，平时别开）----
 if [ "${WIPE_DATA}" = "1" ]; then
@@ -64,7 +68,7 @@ fi
 mkdir -p "${DATA_DIR}"
 
 # ---- 4. 启动（完整输出捕获）----
-echo "🚀 启动 OpenList-GuangYaPan（监听端口 ${OPENLIST_PORT}）..."
+echo "🚀 启动 OpenList-GuangYaPan（监听端口 ${OPENLIST_HTTP_PORT}）..."
 echo "    日志同时写入 startup.log"
 echo "    获取密码命令: ./${BINARY_NAME} admin"
 echo "------------------------------------------"
