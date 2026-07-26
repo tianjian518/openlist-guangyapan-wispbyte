@@ -10,15 +10,23 @@
 
 REPO_OWNER="tianjian518"
 REPO_NAME="openlist-guangyapan-wispbyte"
-RELEASE_TAG="v1.0.0"
-BINARY_GZ="openlist-guangyapan.gz"
-BINARY_NAME="openlist-guangyapan"
+RELEASE_TAG="v1.0.1"
+BINARY_GZ="openlist-guangyapan-v1.0.1.gz"
+BINARY_NAME="openlist-guangyapan-v1.0.1"
 DATA_DIR="./data"
 
 echo "=========================================="
 echo "  OpenList-GuangYaPan 启动脚本"
 echo "  ${REPO_OWNER}/${REPO_NAME} @ ${RELEASE_TAG}"
 echo "=========================================="
+
+# ---- 0. 清理旧版本二进制（不同文件名），避免磁盘残留与误用 ----
+for old in openlist-guangyapan openlist-guangyapan.gz openlist-guangyapan-v1.0.0 openlist-guangyapan-v1.0.0.gz; do
+    if [ -f "$old" ] && [ "$old" != "${BINARY_NAME}" ] && [ "$old" != "${BINARY_GZ}" ]; then
+        echo "🧹 删除旧二进制: $old"
+        rm -f "$old"
+    fi
+done
 
 # ---- 1. 下载预编译二进制（如果未解压，或指定强制重下）----
 if [ ! -f "${BINARY_NAME}" ] || [ "${FORCE_REDOWNLOAD}" = "1" ]; then
